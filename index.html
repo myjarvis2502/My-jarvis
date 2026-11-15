@@ -1,0 +1,115 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAX AI Assistant</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ background:#080e1c;
+ color:white;
+ font-family:Arial,sans-serif;
+ text-align:center;
+ padding:35px 15px;
+}
+h1{color:#00e5ff;font-size:35px}
+.circle{
+ width:160px;height:160px;
+ border:4px solid #00e5ff;
+ border-radius:50%;
+ margin:45px auto;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ box-shadow:0 0 30px #00bfff;
+ font-size:24px;
+ color:#00e5ff;
+}
+button{
+ background:#00c9e8;
+ color:#00101a;
+ border:0;
+ padding:15px 25px;
+ border-radius:30px;
+ font-size:17px;
+ margin:8px;
+ font-weight:bold;
+}
+#output{
+ margin:30px auto;
+ padding:18px;
+ border:1px solid #00c9e8;
+ border-radius:12px;
+ max-width:400px;
+ min-height:65px;
+}
+</style>
+</head>
+<body>
+
+<h1>MAX AI</h1>
+<p>Your Personal Voice Assistant</p>
+
+<div class="circle">MAX</div>
+
+<button onclick="startListening()">TALK TO MAX</button>
+<button onclick="speak('Hello! I am Max. How can I help you?')">START</button>
+
+<div id="output">Hello! I am MAX. Ask me anything.</div>
+
+<script>
+function speak(text){
+ document.getElementById("output").innerText=text;
+ let speech=new SpeechSynthesisUtterance(text);
+ speech.lang="en-IN";
+ speechSynthesis.speak(speech);
+}
+
+function startListening(){
+ const Recognition=window.SpeechRecognition ||
+ window.webkitSpeechRecognition;
+
+ if(!Recognition){
+ speak("Voice recognition is not supported in this browser.");
+ return;
+ }
+
+ const recognition=new Recognition();
+ recognition.lang="en-IN";
+ recognition.start();
+
+ recognition.onresult=function(event){
+ let command=event.results[0][0].transcript.toLowerCase();
+
+ if(command.includes("hello")){
+ speak("Hello! Welcome back.");
+ }
+ else if(command.includes("time")){
+ speak("The time is "+new Date().toLocaleTimeString());
+ }
+ else if(command.includes("date")){
+ speak("Today is "+new Date().toDateString());
+ }
+ else if(command.includes("google")){
+ speak("Opening Google");
+ window.open("https://www.google.com","_blank");
+ }
+ else if(command.includes("youtube")){
+ speak("Opening YouTube");
+ window.open("https://www.youtube.com","_blank");
+ }
+ else{
+ speak("You said "+command+". I am ready to help.");
+ }
+ };
+
+ recognition.onerror=function(){
+ speak("Please try speaking again.");
+ };
+}
+</script>
+
+</body>
+</html>
