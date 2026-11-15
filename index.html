@@ -37,6 +37,7 @@ button{
  margin:8px;
  font-weight:bold;
 }
+#langBtn{background:#ffb300}
 #output{
  margin:30px auto;
  padding:18px;
@@ -55,27 +56,56 @@ button{
 <div class="circle">MAX</div>
 
 <button onclick="startListening()">TALK TO MAX</button>
-<button onclick="speak('Hello! I am Max. How can I help you?')">START</button>
+<button onclick="greet()">START</button>
+<br>
+<button id="langBtn" onclick="toggleLang()">Language: हिंदी</button>
 
-<div id="output">Hello! I am MAX. Ask me anything.</div>
+<div id="output">नमस्ते! मैं MAX हूँ। मुझसे कुछ भी पूछो।</div>
 
 <script>
+let LANG="hi-IN"; // "hi-IN" = Hindi, "en-IN" = English
+
 function speak(text){
  document.getElementById("output").innerText=text;
+ speechSynthesis.cancel();
  let speech=new SpeechSynthesisUtterance(text);
- speech.lang="en-IN";
+ speech.lang=LANG;
  speechSynthesis.speak(speech);
 }
 
-// "search tmkoc", "search for tmkoc" -> "tmkoc"
+function t(hi,en){ return LANG==="hi-IN" ? hi : en; }
+
+function greet(){
+ speak(t("नमस्ते! मैं मैक्स हूँ। मैं आपकी कैसे मदद कर सकता हूँ?","Hello! I am Max. How can I help you?"));
+}
+
+function toggleLang(){
+ LANG = (LANG==="hi-IN") ? "en-IN" : "hi-IN";
+ document.getElementById("langBtn").innerText = LANG==="hi-IN" ? "Language: हिंदी" : "Language: English";
+ speak(t("अब मैं हिंदी में बात करूँगा।","Now I will talk in English."));
+}
+
+// Filler words hata do, jo bache wahi search query
+const FILLER=[
+ "open","ओपन","खोलो","खोल","kholo",
+ "youtube","यूट्यूब","यू","ट्यूब",
+ "google","गूगल",
+ "search","सर्च","खोजो","खोज","ढूंढो","ढूँढो","dhundo",
+ "karo","करो","कर","kar","do","दो",
+ "on","पर","par","and","और","aur","for","me","में","mein"
+];
+
 function getSearchQuery(command){
- let m=command.match(/search(?:\s+for)?\s+(.+)/);
- if(!m) return "";
- let q=m[1]
-  .replace(/\s+(on|in)\s+(youtube|google)\s*$/,"")
-  .replace(/[.?!]+$/,"")
-  .trim();
- return q;
+ const hasSearch=/search|सर्च|खोज|ढूंढ|ढूँढ/.test(command);
+ if(!hasSearch) return "";
+ let words=command.split(/\s+/).filter(function(w){
+  return w && !FILLER.includes(w);
+ });
+ return words.join(" ").trim();
+}
+
+function has(command,list){
+ return list.some(function(w){return command.includes(w);});
 }
 
 function startListening(){
@@ -83,56 +113,57 @@ function startListening(){
  window.webkitSpeechRecognition;
 
  if(!Recognition){
- speak("Voice recognition is not supported in this browser.");
+ speak(t("इस ब्राउज़र में वॉइस सपोर्ट नहीं है।","Voice recognition is not supported in this browser."));
  return;
  }
 
  const recognition=new Recognition();
- recognition.lang="en-IN";
+ recognition.lang=LANG;
  recognition.start();
+ document.getElementById("output").innerText=t("सुन रहा हूँ...","Listening...");
 
  recognition.onresult=function(event){
  let command=event.results[0][0].transcript.toLowerCase();
  let query=getSearchQuery(command);
 
- if(command.includes("hello")){
- speak("Hello! Welcome back.");
+ if(has(command,["hello","नमस्ते","हेलो","हैलो","namaste"])){
+ speak(t("नमस्ते! वापस आपका स्वागत है।","Hello! Welcome back."));
  }
- else if(command.includes("time")){
- speak("The time is "+new Date().toLocaleTimeString());
+ else if(has(command,["time","समय","टाइम","बजे"])){
+ speak(t("अभी समय है ","The time is ")+new Date().toLocaleTimeString(LANG));
  }
- else if(command.includes("date")){
- speak("Today is "+new Date().toDateString());
+ else if(has(command,["date","तारीख","तारिख","दिनांक","डेट"])){
+ speak(t("आज ","Today is ")+new Date().toLocaleDateString(LANG,{weekday:"long",year:"numeric",month:"long",day:"numeric"}));
  }
- else if(command.includes("youtube")){
+ else if(has(command,["youtube","यूट्यूब","यू ट्यूब"])){
  if(query){
- speak("Searching "+query+" on YouTube");
+ speak(t("यूट्यूब पर "+query+" सर्च कर रहा हूँ","Searching "+query+" on YouTube"));
  window.open("https://www.youtube.com/results?search_query="+encodeURIComponent(query),"_blank");
  } else {
- speak("Opening YouTube");
+ speak(t("यूट्यूब खोल रहा हूँ","Opening YouTube"));
  window.open("https://www.youtube.com","_blank");
  }
  }
- else if(command.includes("google")){
+ else if(has(command,["google","गूगल"])){
  if(query){
- speak("Searching "+query+" on Google");
+ speak(t("गूगल पर "+query+" सर्च कर रहा हूँ","Searching "+query+" on Google"));
  window.open("https://www.google.com/search?q="+encodeURIComponent(query),"_blank");
  } else {
- speak("Opening Google");
+ speak(t("गूगल खोल रहा हूँ","Opening Google"));
  window.open("https://www.google.com","_blank");
  }
  }
  else if(query){
- speak("Searching "+query+" on Google");
+ speak(t("गूगल पर "+query+" सर्च कर रहा हूँ","Searching "+query+" on Google"));
  window.open("https://www.google.com/search?q="+encodeURIComponent(query),"_blank");
  }
  else{
- speak("You said "+command+". I am ready to help.");
+ speak(t("आपने कहा: "+command+"। मैं मदद के लिए तैयार हूँ।","You said "+command+". I am ready to help."));
  }
  };
 
  recognition.onerror=function(){
- speak("Please try speaking again.");
+ speak(t("कृपया दोबारा बोलिए।","Please try speaking again."));
  };
 }
 </script>
